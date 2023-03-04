@@ -1,0 +1,83 @@
+Delivery Time Estimation
+Now all these packages should be delivered to their destinations in
+the fleet of vehicles Kiki owns. She has N no. of vehicles available for
+delivering the packages.
+
+
+Each Vehicle has a on limit (L) maximum weight (kg) that it can carry.
+
+All Vehicles travel at the same speed (S km/hr) and in
+the same route. It is assumed that all the destinations
+can be covered in a single route.
+
+The delivery can be made using the criteria
+illustrated below.
+
+Always travelling in max speed.
+Post package delivery, vechicle will return back to the source station with the same speed and will be available for another shipment.
+
+Shipment should contain max packages
+vehicle can carry in a trip.
+We should prefer heavier packages when
+there are multiple shipments with the same
+no. of packages.
+If the weights are also the same, preference
+should be given to the shipment which can
+be delivered first.
+
+Tombo, the geeky business partner obsessed with
+delivery metrics wants to maximise efficiency.
+
+You are required to build a
+command line application using nodejs to
+calculate the estimated delivery
+time for every package by
+maximizing no. of packages in
+every shipment.
+
+Roundoff estimated delivery time upto 2 digits.
+(for example 3.456 becomes 3.45)
+
+Sample Input Formats:
+base_delivery_cost = 100
+no_of_packges = 5
+pkg_id1 = PKG1
+pkg_weight1_in_kg = 50 
+distance1_in_km = 30
+offer_code1 = OFR001
+
+pkg_id2 = PKG2
+pkg_weight2_in_kg = 75
+distance2_in_km = 125
+offer_code2 = OFR008
+
+pkg_id3 = PKG3
+pkg_weight3_in_kg = 175
+distance3_in_km = 100
+offer_code3 = OFR003
+
+pkg_id4 = PKG4
+pkg_weight4_in_kg = 110
+distance4_in_km = 60
+offer_code2 = OFR002
+
+pkg_id5 = PKG5
+pkg_weight5_in_kg = 155
+distance5_in_km = 95
+offer_code5 = NA
+
+no_of_vehicles = 2
+max_speed = 70
+max_carriable_weight = 200
+
+Sample Output Format
+
+PKG1 0 750 3.98
+PKG2 0 1475 1.78
+PKG3 0 2350 1.42
+PKG4 105 1395 0.85
+PKG5 0 2125 4.19
+
+
+
+
