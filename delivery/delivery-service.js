@@ -1,5 +1,5 @@
 
-const offers = require("../../utils/offer");
+const offers = require("../utils/offer");
 class DeliveryService {
     constructor(baseDeliveryCost, noOfPackages, packages, noOfVehicles, maxSpeed, maxCarriableWeight) {
         this.baseDeliveryCost = baseDeliveryCost;
@@ -54,7 +54,7 @@ class DeliveryService {
                 longestDeliveryTime = Math.max(longestDeliveryTime, pkg.deliveryTime);
                 resultsPackages.push(pkg);
             }
-            availableVehicle.availableTime += Math.floor((longestDeliveryTime * 2) * 100) / 100; // including return time
+            availableVehicle.availableTime += this.getTruncateNumber(longestDeliveryTime * 2) // including return time
         }
         resultsPackages.sort((a, b) => {
             if (a.id < b.id) {
@@ -91,7 +91,7 @@ class DeliveryService {
             return 0;
         }
         const discountAmount = this.calculateCost(baseCost, weight, distance) * discount;
-        return Math.floor(discountAmount * 100) / 100;;
+        return this.getTruncateNumber(discountAmount)
     }
 
     getCombinations(packages, maxCarriableWeight, excludedIds) {
@@ -141,13 +141,17 @@ class DeliveryService {
     }
 
     getEstimatedDeliveryTime(pkg, maxSpeed) {
-        let deliveryTime = Math.floor((pkg.distance / maxSpeed) * 100) / 100; // truncate the number to 2 decimal places without rounding       
+        let deliveryTime = this.getTruncateNumber(pkg.distance / maxSpeed) // truncate the number to 2 decimal places without rounding       
         return deliveryTime;
     }
 
     getAvailableVehicle(vehicles) {
         let min = Math.min(...vehicles.map(vehicle => vehicle.availableTime))
         return vehicles.filter(vehicle => vehicle.availableTime === min)[0]
+    }
+
+    getTruncateNumber(value){
+        return Math.floor((value) * 100) / 100;
     }
 }
 
