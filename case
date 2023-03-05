@@ -41,6 +41,7 @@ Roundoff estimated delivery time upto 2 digits.
 Sample Input Formats:
 base_delivery_cost = 100
 no_of_packges = 5
+
 pkg_id1 = PKG1
 pkg_weight1_in_kg = 50 
 distance1_in_km = 30
