@@ -35,7 +35,7 @@ class DeliveryService {
         }));
 
         while (excludedIds.length < packageInfo.length) {
-            const result = this.getCombinations(packageInfo, this.maxCarriableWeight, excludedIds);
+            const result = this.getBestCombinations(packageInfo, this.maxCarriableWeight, excludedIds);
             for (const pkg of result) {
                 excludedIds.push(pkg.id);
                 pkg.deliveryTime = this.getEstimatedDeliveryTime(pkg, this.maxSpeed);
@@ -56,18 +56,9 @@ class DeliveryService {
             }
             availableVehicle.availableTime += this.getTruncateNumber(longestDeliveryTime * 2) // including return time
         }
-        resultsPackages.sort((a, b) => {
-            if (a.id < b.id) {
-                return -1;
-            }
-            if (a.id > b.id) {
-                return 1;
-            }
-            return 0;
-        });
-
+        // Return result is disabled to ensure return format is in expected format
         // console.log('results', resultsPackages)
-        resultsPackages.forEach(x => console.log(`${x.id} ${x.discount} ${x.totalCost} ${x.deliveryTime}`))
+        this.printResultFormat(resultsPackages)
 
     }
 
@@ -94,7 +85,7 @@ class DeliveryService {
         return this.getTruncateNumber(discountAmount)
     }
 
-    getCombinations(packages, maxCarriableWeight, excludedIds) {
+    getBestCombinations(packages, maxCarriableWeight, excludedIds) {
         let maxPackages = [];
         let maxTotalWeight = 0;
         let minDistance = Infinity;
@@ -102,10 +93,20 @@ class DeliveryService {
         for (let len = 1; len <= packages.length; len++) {
             const subsetCombinations = this.getCombinationsWithLength(packages, len);
             for (const combination of subsetCombinations) {
+                // Calculate the totalWeight for packages inside combination using reducer function
                 const totalWeight = combination.reduce((acc, pkg) => acc + pkg.weight, 0);
                 if (totalWeight <= maxCarriableWeight) {
+                    // Exclude packages that already been delivered
                     if (combination.every(pkg => !excludedIds.includes(pkg.id))) {
-                        const distance = combination.reduce((acc, pkg) => acc + pkg.distance, 0);
+                        // Same route, thus only get the highest distance in combination
+                        const highestDistanceObject = combination.reduce((acc, pkg) => {
+                            return pkg.distance > acc.distance ? pkg : acc;
+                          });
+                        const distance = highestDistanceObject.distance
+                        // Business rule:
+                        // 1. Always pick the max packages
+                        // 2. Prefer heavier when same number of packages
+                        // 3. Prefer packages that can  delivered first (shortest distance) if same weight
                         if (combination.length > maxPackages.length ||
                             (combination.length === maxPackages.length && totalWeight > maxTotalWeight) ||
                             (combination.length === maxPackages.length && totalWeight === maxTotalWeight && distance < minDistance)) {
@@ -122,9 +123,9 @@ class DeliveryService {
     }
 
 
+    // generates all possible combinations of 'len' length from arr
     getCombinationsWithLength(arr, len) {
         const combinations = [];
-
         function generate(start, combination) {
             if (combination.length === len) {
                 combinations.push(combination);
@@ -135,7 +136,6 @@ class DeliveryService {
                 generate(i + 1, [...combination, arr[i]]);
             }
         }
-
         generate(0, []);
         return combinations;
     }
@@ -150,8 +150,21 @@ class DeliveryService {
         return vehicles.filter(vehicle => vehicle.availableTime === min)[0]
     }
 
-    getTruncateNumber(value){
+    getTruncateNumber(value) {
         return Math.floor((value) * 100) / 100;
+    }
+
+    printResultFormat(resultsPackages) {
+        resultsPackages.sort((a, b) => {
+            if (a.id < b.id) {
+                return -1;
+            }
+            if (a.id > b.id) {
+                return 1;
+            }
+            return 0;
+        });
+        resultsPackages.forEach(x => console.log(`${x.id} ${x.discount} ${x.totalCost} ${x.deliveryTime}`))
     }
 }
 
