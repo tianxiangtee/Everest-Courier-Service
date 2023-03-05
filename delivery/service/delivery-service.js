@@ -8,53 +8,66 @@ class DeliveryService {
         this.noOfVehicles = noOfVehicles;
         this.maxSpeed = maxSpeed;
         this.maxCarriableWeight = maxCarriableWeight;
-        this.deliveryTimeMap = new Map();
     }
 
 
     processPackage() {
-        // Calculate cost for all packages
-        for (const pkg of this.packages) {
-            const deliveryCost = this.calculateCost(this.baseDeliveryCost, pkg.weight, pkg.distance)
+        // Calculate cost and discount for all packages
+        const packageInfo = this.packages.map(pkg => {
+            const deliveryCost = this.calculateCost(this.baseDeliveryCost, pkg.weight, pkg.distance);
             const discount = this.applyDiscount(this.baseDeliveryCost, pkg.offerCode, pkg.weight, pkg.distance);
             const totalCost = deliveryCost - discount;
-            pkg.discount = discount
-            pkg.totalCost = totalCost
-        }
+            return {
+                ...pkg,
+                discount,
+                totalCost,
+                deliveryTime: 0,
+            };
+        });
 
-        // Calculate the estimate delivery time for each package 
+        // Calculate the estimate delivery time for each package
         let excludedIds = [];
-        let resultsPackages = []
-        let vechicleId = 1
+        let resultsPackages = [];
+        let vechicleId = 1;
         let vehicles = Array.from({ length: this.noOfVehicles }, () => ({
             id: vechicleId++,
             availableTime: 0,
         }));
 
-
-        while (excludedIds.length < this.packages.length) {
-            const result = this.getCombinations(this.packages, this.maxCarriableWeight, excludedIds);
+        while (excludedIds.length < packageInfo.length) {
+            const result = this.getCombinations(packageInfo, this.maxCarriableWeight, excludedIds);
             for (const pkg of result) {
                 excludedIds.push(pkg.id);
-                pkg.deliveryTime = (this.getEstimatedDeliveryTime(pkg, this.maxSpeed));
+                pkg.deliveryTime = this.getEstimatedDeliveryTime(pkg, this.maxSpeed);
             }
-            let availableVehicle = this.getAvailableVehicle(vehicles)
-                        
-            result.sort((a, b) => b.deliveryTime - a.deliveryTime);
-            const longestDeliveryTime = result[0].deliveryTime // since it is same route, only longest distance delivery time will be count
-            result.forEach(pkg => {
-                pkg.deliveryTime +=availableVehicle.availableTime
-                resultsPackages.push(pkg)
-            });
-            availableVehicle.availableTime += longestDeliveryTime * 2 // including time spent on retrn
-            // console.log('vehicles', vehicles)
+            let availableVehicle = this.getAvailableVehicle(vehicles);
+
+            let longestDeliveryTime = 0;
+            for (const pkg of result) {
+                pkg.deliveryTime += availableVehicle.availableTime;
+
+                // Special handling rounding due to  inherent imprecision of floating-point arithmetic in computers, 
+                // where certain decimal values cannot be represented exactly in binary.
+                // for example : 1.35 + 2.84 will always return 4.1899999999999995
+                pkg.deliveryTime = Math.round((pkg.deliveryTime + Number.EPSILON) * 100) / 100
+
+                longestDeliveryTime = Math.max(longestDeliveryTime, pkg.deliveryTime);
+                resultsPackages.push(pkg);
+            }
+            availableVehicle.availableTime += Math.floor((longestDeliveryTime * 2) * 100) / 100; // including return time
         }
+        resultsPackages.sort((a, b) => {
+            if (a.id < b.id) {
+                return -1;
+            }
+            if (a.id > b.id) {
+                return 1;
+            }
+            return 0;
+        });
 
-        console.log('results', resultsPackages)
-
-
-
-
+        // console.log('results', resultsPackages)
+        resultsPackages.forEach(x => console.log(`${x.id} ${x.discount} ${x.totalCost} ${x.deliveryTime}`))
 
     }
 
@@ -78,28 +91,36 @@ class DeliveryService {
             return 0;
         }
         const discountAmount = this.calculateCost(baseCost, weight, distance) * discount;
-        return discountAmount;
+        return Math.floor(discountAmount * 100) / 100;;
     }
 
-    //test
     getCombinations(packages, maxCarriableWeight, excludedIds) {
-        let combinations = [];
+        let maxPackages = [];
+        let maxTotalWeight = 0;
+        let minDistance = Infinity;
+
         for (let len = 1; len <= packages.length; len++) {
             const subsetCombinations = this.getCombinationsWithLength(packages, len);
             for (const combination of subsetCombinations) {
                 const totalWeight = combination.reduce((acc, pkg) => acc + pkg.weight, 0);
                 if (totalWeight <= maxCarriableWeight) {
-                    combination.totalWeight = totalWeight;
                     if (combination.every(pkg => !excludedIds.includes(pkg.id))) {
-                        combinations.push(combination);
+                        const distance = combination.reduce((acc, pkg) => acc + pkg.distance, 0);
+                        if (combination.length > maxPackages.length ||
+                            (combination.length === maxPackages.length && totalWeight > maxTotalWeight) ||
+                            (combination.length === maxPackages.length && totalWeight === maxTotalWeight && distance < minDistance)) {
+                            maxPackages = combination;
+                            maxTotalWeight = totalWeight;
+                            minDistance = distance;
+                        }
                     }
                 }
             }
         }
-        combinations.sort((a, b) => b.totalWeight - a.totalWeight);
-        delete combinations[0].totalWeight;
-        return combinations[0];
+
+        return maxPackages;
     }
+
 
     getCombinationsWithLength(arr, len) {
         const combinations = [];
@@ -124,22 +145,10 @@ class DeliveryService {
         return deliveryTime;
     }
 
-    // getEstimatedDeliveryTime(bestCombination, maxSpeed) {
-    //     bestCombination.sort((a, b) => b.distance - a.distance);
-    //     const longestDistance = bestCombination[0].distance // since it is same route, only longest distance will be count
-    //     let deliveryTime = Math.floor((longestDistance / maxSpeed) * 100) / 100; // truncate the number to 2 decimal places without rounding       
-    //     // const totalTime =  Math.floor((deliveryTime * 2) * 100) / 100; // multiply by 2 since the vehicle must travel to and from the destination
-    //     return deliveryTime;
-    // }
-
     getAvailableVehicle(vehicles) {
         let min = Math.min(...vehicles.map(vehicle => vehicle.availableTime))
         return vehicles.filter(vehicle => vehicle.availableTime === min)[0]
     }
-
-
-
-
 }
 
 module.exports = DeliveryService;
