@@ -1,5 +1,7 @@
 
-const offers = require("../utils/offer");
+const offers = require("./common/offer");
+const { Package, Vehicle } = require("./model")
+
 class DeliveryService {
     constructor(baseDeliveryCost, noOfPackages, packages, noOfVehicles, maxSpeed, maxCarriableWeight) {
         this.baseDeliveryCost = baseDeliveryCost;
@@ -13,26 +15,21 @@ class DeliveryService {
 
 
     processPackage() {
+        const packageInfo = this.packages.map((pkg, index) => new Package(pkg.id, pkg.weight, pkg.distance, pkg.offerCode));
+
         // Calculate cost and discount for all packages
-        const packageInfo = this.packages.map(pkg => {
+        packageInfo.forEach(pkg => {
             const deliveryCost = this.calculateCost(this.baseDeliveryCost, pkg.weight, pkg.distance);
             const discount = this.applyDiscount(this.baseDeliveryCost, pkg.offerCode, pkg.weight, pkg.distance);
             const totalCost = deliveryCost - discount;
-            return {
-                ...pkg,
-                discount,
-                totalCost,
-                deliveryTime: 0,
-            };
+            pkg.discount = discount;
+            pkg.totalCost = totalCost;
         });
 
         // Calculate the estimate delivery time for each package
         let excludedIds = [];
         let vechicleId = 1;
-        let vehicles = Array.from({ length: this.noOfVehicles }, () => ({
-            id: vechicleId++,
-            availableTime: 0,
-        }));
+        let vehicles = Array.from({ length: this.noOfVehicles }, () => new Vehicle(vechicleId++, 0));
 
         while (excludedIds.length < packageInfo.length) {
             const result = this.getBestCombinations(packageInfo, this.maxCarriableWeight, excludedIds);
@@ -101,7 +98,7 @@ class DeliveryService {
                         // Same route, thus only get the highest distance in combination
                         const highestDistanceObject = combination.reduce((acc, pkg) => {
                             return pkg.distance > acc.distance ? pkg : acc;
-                          });
+                        });
                         const distance = highestDistanceObject.distance
                         // Business rule:
                         // 1. Always pick the max packages
@@ -168,7 +165,7 @@ class DeliveryService {
     }
 
     // Only use for testing
-    getPackageById(id){
+    getPackageById(id) {
         const packages = this.resultsPackages.filter(pkg => pkg.id === id)
         // find first package that match filter
         return packages[0]
