@@ -106,26 +106,26 @@ describe("DeliveryService", () => {
         it('should return combinations of packages that have a total weight not greater than maxCarriableWeight and are not excluded', () => {
             const deliveryService = new DeliveryService(baseDeliveryCost, noOfPackages, packages, noOfVehicles, maxSpeed, maxCarriableWeight);
             const excludedIds = ["PKG2", "PKG4"];
-            const combinations = deliveryService.getCombinations(packages, maxCarriableWeight, excludedIds);
+            const combinations = deliveryService.getBestCombinations(packages, maxCarriableWeight, excludedIds);
             expect(combinations).toEqual([
                 { id: 'PKG3', weight: 175, distance: 100, offerCode: 'OFR003' }
             ]);
         });
     });
 
-    //   describe('getCombinationsWithLength', () => {
-    //     it('should return all possible combinations of arr with length len', () => {
-    //       const deliveryService = new DeliveryService(baseDeliveryCost, noOfPackages, packages, noOfVehicles, maxSpeed, maxCarriableWeight);
-    //       const arr = [1, 2, 3];
-    //       const len = 2;
-    //       const combinations = deliveryService.getCombinationsWithLength(arr, len);
-    //       expect(combinations).toEqual([
-    //         [1, 2],
-    //         [1, 3],
-    //         [2, 3],
-    //       ]);
-    //     });
-    //   });
+      describe('getCombinationsWithLength', () => {
+        it('should return all possible combinations of arr with length len', () => {
+          const deliveryService = new DeliveryService(baseDeliveryCost, noOfPackages, packages, noOfVehicles, maxSpeed, maxCarriableWeight);
+          const arr = [1, 2, 3];
+          const len = 2;
+          const combinations = deliveryService.getCombinationsWithLength(arr, len);
+          expect(combinations).toEqual([
+            [1, 2],
+            [1, 3],
+            [2, 3],
+          ]);
+        });
+      });
 
     describe('getEstimatedDeliveryTime', () => {
         it('should return the estimated delivery time for a package', () => {
