@@ -8,6 +8,7 @@ class DeliveryService {
         this.noOfVehicles = noOfVehicles;
         this.maxSpeed = maxSpeed;
         this.maxCarriableWeight = maxCarriableWeight;
+        this.resultsPackages = [];
     }
 
 
@@ -27,7 +28,6 @@ class DeliveryService {
 
         // Calculate the estimate delivery time for each package
         let excludedIds = [];
-        let resultsPackages = [];
         let vechicleId = 1;
         let vehicles = Array.from({ length: this.noOfVehicles }, () => ({
             id: vechicleId++,
@@ -52,13 +52,13 @@ class DeliveryService {
                 pkg.deliveryTime = Math.round((pkg.deliveryTime + Number.EPSILON) * 100) / 100
 
                 longestDeliveryTime = Math.max(longestDeliveryTime, pkg.deliveryTime);
-                resultsPackages.push(pkg);
+                this.resultsPackages.push(pkg);
             }
             availableVehicle.availableTime += this.getTruncateNumber(longestDeliveryTime * 2) // including return time
         }
         // Return result is disabled to ensure return format is in expected format
-        // console.log('results', resultsPackages)
-        this.printResultFormat(resultsPackages)
+        // console.log('results', this.resultsPackages)
+        this.printResultFormat(this.resultsPackages)
 
     }
 
@@ -165,6 +165,13 @@ class DeliveryService {
             return 0;
         });
         resultsPackages.forEach(x => console.log(`${x.id} ${x.discount} ${x.totalCost} ${x.deliveryTime}`))
+    }
+
+    // Only use for testing
+    getPackageById(id){
+        const packages = this.resultsPackages.filter(pkg => pkg.id === id)
+        // find first package that match filter
+        return packages[0]
     }
 }
 
